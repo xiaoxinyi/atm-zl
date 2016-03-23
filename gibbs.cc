@@ -7,7 +7,7 @@
 #include "gibbs.h"
 #include "author.h"
 
-#define REP_NO 100
+#define REP_NO 300
 #define DEFAULT_HYPER_LAG 0
 #define DEFAULT_SHUFFLE_LAG 100
 #define DEFAULT_SAMPLE_ALPHA 0

@@ -82,11 +82,9 @@ void AuthorUtils::PermuteWords(Author* author) {
 
 
 void AuthorUtils::UpdateTopicFromWord(Author* author,
-																			 int word_idx, 
+																			 Word* word,
 																			 int update,
 																			 AllTopics* all_topics) {
-	AllWords& all_words = AllWords::GetInstance();
-	Word* word = all_words.getMutableWord(word_idx);
 	int topic_id = word->getTopicId();
 	if (topic_id == -1) {
 		return;
@@ -98,18 +96,32 @@ void AuthorUtils::UpdateTopicFromWord(Author* author,
 	topic->updateWordCount(word->getId(), update);
 
 }
+
 void AuthorUtils::SampleTopic(
 			Author* author,
 			int word_idx,
       bool remove,
       double alpha,
-      double eta,
       AllTopics* all_topics) {
+
+	AllWords& all_words = AllWords::GetInstance();
+	Word* word = all_words.getMutableWord(word_idx);
 	if (remove) {
-		UpdateTopicFromWord()
+		UpdateTopicFromWord(author, word, -1, all_topics);
 	}
 
+	int topics = all_topics->getTopics();
+	vector<double> log_pr(topics, 0.0);
+	for (int i = 0; i < topics; i++) {
+		Topic* topic = all_topics->getMutableTopic(i);
+		int topic_count = author->getTopicCounts(i);
+		log_pr[i] = log(topic_count + alpha) + topic->getLogPrWord(word->getId());
+	}
 
+	int sample_topic_id = Utils::SampleFromLogPr(log_pr);
+
+	word->setTopicId(sample_topic_id);
+	UpdateTopicFromWord(author, word, 1, all_topics);
 }
 
 void AuthorUtils::SampleTopics(
@@ -117,60 +129,39 @@ void AuthorUtils::SampleTopics(
       int permute_words,
       bool remove,
       double alpha,
-      double eta) {
-	int depth = author->getMutablePathTopic(0)->getMutableTree()->getDepth();
-	vector<double> log_pr(depth);
+      AllTopics* all_topics) {
+
 
 	// Permute the words in the author.
 	if (permute_words == 1) {
 		PermuteWords(author);
 	}
 
-	AllWords& all_words = AllWords::GetInstance();
-
-	for (int i = 0; i < author->getWords(); i++) {
+	int author_word_count = author->getWords();
+	for (int i = 0; i < author_word_count; i++) {
 		int word_idx = author->getWord(i);
-		Word* word = all_words.getMutableWord(word_idx);
-
-		if (remove) {
-			int level = word->getLevel();
-			if (level != -1) {
-				// Update the word level.
-				author->updateLevelCounts(level, -1);
-			
-				// Decrease the word count.
-				author->getMutablePathTopic(level)->updateWordCount(word->getId(), -1);
-			}
-		}
-
-		// Compute probabilities.
-		// Compute log prbabilities for all levels.
-		// Use the corpus GEM mean and scale.
-		author->computeLogPrLevel(gem_mean, gem_scale, depth);
-
-		for (int j = 0; j < depth; j++) {
-			double log_pr_level = author->getLogPrLevel(j);
-			double log_pr_word = 
-					author->getMutablePathTopic(j)->getLogPrWord(word->getId());
-
-			double log_value = log_pr_level + log_pr_word;
-			// Keep for each level the log probability of the word +
-      // log probability of the level.
-      // Use these values to sample the new level.
-      log_pr.at(j) = log_value;
-		}
-
-		// Sample the new level and update.
-    int new_level = Utils::SampleFromLogPr(log_pr);
-    author->getMutablePathTopic(new_level)->updateWordCount(word->getId(), 1);
-    word->setLevel(new_level);
-    author->updateLevelCounts(new_level, 1);
- 	}
+		SampleTopic(author, word_idx, remove, alpha, all_topics);
+	}
 }
 
+double AuthorUtils::AlphaScore(Author* author, double alpha) {
+	double score = 0.0;
+	double lgam_alpha = gsl_sf_lngamma(alpha);
+	int word_count = author->getWords();
+	int topic_no = author->getTopicNo();
 
+	score += gsl_sf_lngamma(topic_no * alpha);
+	for (int i = 0; i < topic_no; i++) {
+		int topic_count = author->getTopicCounts(i);
+		if (topic_count > 0) {
+			score += gsl_sf_lngamma(topic_count + alpha) - lgam_alpha;
+		}
+	}
 
+	score -= gsl_sf_lngamma(word_count + topic_no * alpha);
 
+	return score;
+}
 
 // =======================================================================
 // AllAuthorsUtils
@@ -184,6 +175,7 @@ double AllAuthorsUtils::AlphaScores(double alpha) {
 		Author* author = all_authors.getMutableAuthor(i);
 		score += AuthorUtils::AlphaScore(author, alpha);
 	}	
+	return score;
 }
 
 }  // namespace atm

@@ -37,11 +37,14 @@ private:
 	int topic_id_;
 };
 
+class AllTopics;
+
 class WordUtils {
 public:
 	static void UpdateAuthorFromWord(
-			int word,
-			int update);
+			int word_idx,
+			int update,
+			AllTopics* all_topics);
 };
 
 // AllWords contains all the words in the corpus,
@@ -114,11 +117,9 @@ public:
 	// Permute the words in a document.
 	static void PermuteWords(Document* document);
 
-	// Permute author ids in a document.
-	static void PermuteAuthors(Document* document);
-
 	// Sample author id
-	static void SampleAuthors(Document* document);
+	static void SampleAuthors(Document* document, 
+														AllTopics* all_topics);
 
 };
 

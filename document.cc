@@ -6,6 +6,7 @@
 #include "document.h"
 #include "utils.h"
 #include "author.h"
+#include "topic.h"
 
 
 namespace atm {
@@ -38,39 +39,41 @@ bool Word::operator==(const Word& word) {
 // =======================================================================
 
 void WordUtils::UpdateAuthorFromWord(
-			int word,
-			int update) {
+			int word_idx,
+			int update,
+			AllTopics* all_topics) {
 	AllWords& all_words = AllWords::GetInstance();
-	Word* word_ptr = all_words.getMutableWord(word);
+	Word* word = all_words.getMutableWord(word_idx);
 
-	if (word_ptr->getAuthorId() == -1 && update == -1) {
+	if (word->getAuthorId() == -1 && update == -1) {
 			return;
 	}
 
 	AllAuthors& all_authors = AllAuthors::GetInstance();
-	Author* author = all_authors.getMutableAuthor(word_ptr->getAuthorId());
+	Author* author = all_authors.getMutableAuthor(word->getAuthorId());
 	if (update == -1) {	
-		int level = word_ptr->getLevel();
-		if (level != -1) {
-			// Update level count.
-			author->updateLevelCounts(level, update);	
+		int topic_id = word->getTopicId();
+		if (topic_id != -1) {
+			// Update topic_id count.
+			author->updateTopicCounts(topic_id, update);	
 
 			// Update topic statistics.
-			author->getMutablePathTopic(level)->updateWordCount(word_ptr->getId(), -1);
+			Topic* topic = all_topics->getMutableTopic(topic_id);
+			topic->updateWordCount(word->getId(), update);
 		}
 		
 		// Remove word from author.
-		author->removeWord(word);
+		author->removeWord(word_idx);
 
-		// Reset author id and level.
-		word_ptr->setAuthorId(-1);
-		word_ptr->setLevel(-1);
+		// Reset author id and topic_id.
+		word->setAuthorId(-1);
+		word->setTopicId(-1);
 		return;
 	}
 
 	if (update == 1) {
-		author->addWord(word);
-		word_ptr->setLevel(-1);
+		author->addWord(word_idx);
+		word->setTopicId(-1);
 	}
 }
 
@@ -119,27 +122,9 @@ void DocumentUtils::PermuteWords(Document* document) {
   gsl_permutation_free(perm);
 }
 
-void DocumentUtils::PermuteAuthors(Document* document) {
-	int size = document->getAuthors();
-	vector<int> permuted_author_ids;
 
-	// Permute the values in perm.
-	// These values correspond to the indices of the author_id in 
-	// the author id vector of the document.
-	gsl_permutation* perm = gsl_permutation_calloc(size);
-	Utils::Shuffle(perm, size);
-	int perm_size = perm->size;
-	assert(size == perm_size);
-
-	for (int i = 0; i < perm_size; i++) {
-		permuted_author_ids.push_back(document->getAuthorId(perm->data[i]));
-	}
-
-	document->setAuthorIds(permuted_author_ids);
-	gsl_permutation_free(perm);
-}
-
-void DocumentUtils::SampleAuthors(Document* document) {
+void DocumentUtils::SampleAuthors(Document* document, 
+																	AllTopics* all_topics) {
 	int authors = document->getAuthors();
 	std::vector<double> log_pr(authors, log(1.0 / authors));
 	
@@ -153,13 +138,11 @@ void DocumentUtils::SampleAuthors(Document* document) {
 		// Sample author id uniformly.
 		int author_id = Utils::SampleFromLogPr(log_pr);
 		if (author_id != word->getAuthorId()) {
-			WordUtils::UpdateAuthorFromWord(word_idx, -1);
+			WordUtils::UpdateAuthorFromWord(word_idx, -1, all_topics);
 			word->setAuthorId(author_id);
-			WordUtils::UpdateAuthorFromWord(word_idx, 1);	
+			WordUtils::UpdateAuthorFromWord(word_idx, 1, all_topics);	
 		}
 	}
 }
-
-
 
 }  // namespace atm

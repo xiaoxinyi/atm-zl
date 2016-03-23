@@ -85,7 +85,6 @@ public:
 			Author* author,
       int permute_words,
       bool remove,
-      double alpha,
       double eta,
       AllTopics* all_topics);
 
@@ -94,11 +93,10 @@ public:
 			int word_idx,
 			bool remove,
 			double alpha,
-			double eta,
 			AllTopics* all_topics);
 
 	static void UpdateTopicFromWord(Author* author, 
-																	 int word_idx,
+																	 Word* word,
 																	 int update,
 																	 AllTopics* all_topics);
 
@@ -124,6 +122,8 @@ public:
 	Author* getMutableAuthor(int author_id) { return &authors_[author_id]; }
 
 	void addAuthor(int id, int depth) { authors_.emplace_back(Author(id, depth)); }
+
+	void clearAllAuthors() { authors_.resize(0); }
 
 private:
 	// All authors.

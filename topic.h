@@ -20,7 +20,7 @@ namespace atm {
 // and a probability for sampling the path.
 class Topic {
 public:
-	Topic(int corpus_word_no, double eta_);
+	Topic(int corpus_word_no, double eta);
 	
   double getLogPrWord(int word_id) const { 
   	return log(eta_ + word_counts_[word_id]) - 
@@ -98,7 +98,7 @@ class AllTopicsUtils {
 public:
 	// Compute eta score.
 	// eta - dirichlet distribution parameter of each topic.
-	static double EtaScore(AllTopics* all_topics);
+	static double EtaScores(AllTopics* all_topics);
 
 	static void SaveTopics(AllTopics* all_topics, 
 												 const string& filename);

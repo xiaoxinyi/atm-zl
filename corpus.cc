@@ -103,6 +103,8 @@ void CorpusUtils::ReadCorpus(
   authors_infile.close();
 
   AllAuthors& all_authors = AllAuthors::GetInstance();
+  all_authors.clearAllAuthors();
+  
   for (int i = 0; i < author_no; i++) {
     all_authors.addAuthor(i, topic_no);
   }

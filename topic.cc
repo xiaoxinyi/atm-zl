@@ -69,7 +69,7 @@ double TopicUtils::EtaScore(Topic* topic) {
 // AllTopicsUtils 
 // =======================================================================
 
-double AllTopicsUtils::EtaScore(AllTopics* all_topics) {
+double AllTopicsUtils::EtaScores(AllTopics* all_topics) {
 	int topics = all_topics->getTopics();
 	double score = 0.0;
 	for (int i = 0; i < topics; i++) {

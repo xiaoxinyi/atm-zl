@@ -27,6 +27,7 @@ public:
   				 log(eta_ * corpus_word_no_ + topic_word_no_); }
 
   int getWordCount(int word_id) const { return word_counts_[word_id]; }
+  void setWordCount(int word_id, int count) { word_counts_[word_id] = count; }
 
   // Update the count of a word in a given topic.
   void updateWordCount(int word_id, int update);
@@ -66,7 +67,9 @@ class TopicUtils {
   static double EtaScore(Topic* topic);
 
  
-  static void SaveTopic(Topic* topic, ofstream& ofs) ;
+  static void SaveTopic(Topic* topic, 
+  											ofstream& ofs,
+  											ofstream& ofs_count);
 
 };
 
@@ -101,7 +104,12 @@ public:
 	static double EtaScores(AllTopics* all_topics);
 
 	static void SaveTopics(AllTopics* all_topics, 
-												 const string& filename);
+												 const string& filename,
+												 const string& filename_count);
+
+	static void LoadTopics(AllTopics* all_topics,
+												const string& filename_topics,
+												const string& filename_other);
 
 };
 

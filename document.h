@@ -44,7 +44,8 @@ public:
 	static void UpdateAuthorFromWord(
 			int word_idx,
 			int update,
-			AllTopics* all_topics);
+			AllTopics* all_topics,
+			bool inf = false);
 };
 
 // AllWords contains all the words in the corpus,
@@ -119,7 +120,8 @@ public:
 
 	// Sample author id
 	static void SampleAuthors(Document* document, 
-														AllTopics* all_topics);
+														AllTopics* all_topics,
+														bool inf=false);
 
 };
 

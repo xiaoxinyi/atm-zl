@@ -84,16 +84,18 @@ void AuthorUtils::PermuteWords(Author* author) {
 void AuthorUtils::UpdateTopicFromWord(Author* author,
 																			 Word* word,
 																			 int update,
-																			 AllTopics* all_topics) {
+																			 AllTopics* all_topics,
+																			 bool inf) {
 	int topic_id = word->getTopicId();
 	if (topic_id == -1) {
 		return;
 	}
 
 	author->updateTopicCounts(topic_id, update);
-
-	Topic* topic = all_topics->getMutableTopic(topic_id);
-	topic->updateWordCount(word->getId(), update);
+	if (not inf) {
+		Topic* topic = all_topics->getMutableTopic(topic_id);
+		topic->updateWordCount(word->getId(), update);
+	}
 
 }
 
@@ -102,12 +104,13 @@ void AuthorUtils::SampleTopic(
 			int word_idx,
       bool remove,
       double alpha,
-      AllTopics* all_topics) {
+      AllTopics* all_topics,
+      bool inf) {
 
 	AllWords& all_words = AllWords::GetInstance();
 	Word* word = all_words.getMutableWord(word_idx);
 	if (remove) {
-		UpdateTopicFromWord(author, word, -1, all_topics);
+		UpdateTopicFromWord(author, word, -1, all_topics, inf);
 	}
 
 	int topics = all_topics->getTopics();
@@ -121,7 +124,7 @@ void AuthorUtils::SampleTopic(
 	int sample_topic_id = Utils::SampleFromLogPr(log_pr);
 
 	word->setTopicId(sample_topic_id);
-	UpdateTopicFromWord(author, word, 1, all_topics);
+	UpdateTopicFromWord(author, word, 1, all_topics, inf);
 }
 
 void AuthorUtils::SampleTopics(
@@ -129,7 +132,8 @@ void AuthorUtils::SampleTopics(
       int permute_words,
       bool remove,
       double alpha,
-      AllTopics* all_topics) {
+      AllTopics* all_topics,
+      bool inf) {
 
 
 	// Permute the words in the author.
@@ -140,7 +144,7 @@ void AuthorUtils::SampleTopics(
 	int author_word_count = author->getWords();
 	for (int i = 0; i < author_word_count; i++) {
 		int word_idx = author->getWord(i);
-		SampleTopic(author, word_idx, remove, alpha, all_topics);
+		SampleTopic(author, word_idx, remove, alpha, all_topics, inf);
 	}
 }
 

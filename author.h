@@ -86,19 +86,22 @@ public:
       int permute_words,
       bool remove,
       double eta,
-      AllTopics* all_topics);
+      AllTopics* all_topics,
+      bool inf=false);
 
 	static void SampleTopic(
 			Author* author,
 			int word_idx,
 			bool remove,
 			double alpha,
-			AllTopics* all_topics);
+			AllTopics* all_topics,
+			bool inf=false);
 
 	static void UpdateTopicFromWord(Author* author, 
 																	 Word* word,
 																	 int update,
-																	 AllTopics* all_topics);
+																	 AllTopics* all_topics,
+																	 bool inf=false);
 
 	static void PermuteWords(Author* author);
 

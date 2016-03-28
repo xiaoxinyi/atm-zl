@@ -41,7 +41,8 @@ bool Word::operator==(const Word& word) {
 void WordUtils::UpdateAuthorFromWord(
 			int word_idx,
 			int update,
-			AllTopics* all_topics) {
+			AllTopics* all_topics,
+			bool inf) {
 	AllWords& all_words = AllWords::GetInstance();
 	Word* word = all_words.getMutableWord(word_idx);
 
@@ -57,9 +58,11 @@ void WordUtils::UpdateAuthorFromWord(
 			// Update topic_id count.
 			author->updateTopicCounts(topic_id, update);	
 
-			// Update topic statistics.
-			Topic* topic = all_topics->getMutableTopic(topic_id);
-			topic->updateWordCount(word->getId(), update);
+			if (not inf) {
+				// Update topic statistics.
+				Topic* topic = all_topics->getMutableTopic(topic_id);
+				topic->updateWordCount(word->getId(), update);
+			}	
 		}
 		
 		// Remove word from author.
@@ -124,7 +127,8 @@ void DocumentUtils::PermuteWords(Document* document) {
 
 
 void DocumentUtils::SampleAuthors(Document* document, 
-																	AllTopics* all_topics) {
+																	AllTopics* all_topics,
+																	bool inf) {
 	int authors = document->getAuthors();
 	std::vector<double> log_pr(authors, log(1.0 / authors));
 	

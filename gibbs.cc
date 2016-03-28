@@ -149,12 +149,12 @@ void GibbsSampler::InitGibbsState(
 }
 
 GibbsState* GibbsSampler::InitGibbsStateRep(
-    const std::string& filename_corpus,
+    const string& filename_corpus,
     const string& filename_authors,
-    const std::string& filename_settings,
+    const string& filename_settings,
     long random_seed) {
   double best_score = 0.0;
-  GibbsState* best_gibbs_state = NULL;
+  GibbsState* best_gibbs_state = nullptr;
 
   for (int i = 0; i < REP_NO; i++) {
     // Initialize the random number generator.
@@ -168,7 +168,7 @@ GibbsState* GibbsSampler::InitGibbsStateRep(
 
     // Update Gibbs best state if necessary.
     if (gibbs_state->getScore()  > best_score || i == 0) {
-      if (best_gibbs_state != NULL) {
+      if (best_gibbs_state != nullptr) {
         delete best_gibbs_state;
       }
       best_gibbs_state = gibbs_state;
@@ -184,7 +184,7 @@ GibbsState* GibbsSampler::InitGibbsStateRep(
 }
 
 void GibbsSampler::IterateGibbsState(GibbsState* gibbs_state) {
-  assert(gibbs_state != NULL);
+  assert(gibbs_state != nullptr);
 
   
   Corpus* corpus = gibbs_state->getMutableCorpus();
@@ -243,6 +243,14 @@ void GibbsSampler::IterateGibbsState(GibbsState* gibbs_state) {
 
   cout << "Gibbs score at iteration "
        << gibbs_state->getIteration() << " = " << gibbs_score << endl;
+}
+
+void GibbsSampler::InferATM(
+          const string& filename_corpus,
+          const string& filename_authors,
+          const string& filename_settings,
+          long rng_seed) {
+  
 }
 
 }  // namespace atm

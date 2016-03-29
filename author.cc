@@ -167,6 +167,21 @@ double AuthorUtils::AlphaScore(Author* author, double alpha) {
 	return score;
 }
 
+vector<double> AuthorUtils::TopicProportion(Author* author, 
+																						double alpha) {
+
+	int topic_no = author->getTopicNo();
+	vector<double> log_pr(topic_no, 0.0);
+	int sum_topic_count = author->getSumTopicCounts(topic_no);
+
+	for (int i = 0; i < topic_no; i++) {
+		log_pr[i] = log(author->getTopicCounts(i) + alpha) - 
+								log(sum_topic_count + topic_no * alpha);
+	}
+	
+	return log_pr;
+}
+
 // =======================================================================
 // AllAuthorsUtils
 // =======================================================================

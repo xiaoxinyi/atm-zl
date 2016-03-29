@@ -28,10 +28,10 @@ public:
 
   int getWordCount(int word_id) const { return word_counts_[word_id]; }
   void setWordCount(int word_id, int count) { word_counts_[word_id] = count; }
-
-  // Update the count of a word in a given topic.
+	// Update the count of a word in a given topic.
   void updateWordCount(int word_id, int update);
 
+  void setTopicWordNo(int topic_word_no) { topic_word_no_ = topic_word_no; }
   int getTopicWordNo() const { return topic_word_no_; }
 
   double getLgamWordCountEta(int word_id) const {
@@ -110,6 +110,8 @@ public:
 	static void LoadTopics(AllTopics* all_topics,
 												const string& filename_topics,
 												const string& filename_other);
+
+	static vector<double> WordProbabilities(AllTopics* all_topics, int word_id);
 
 };
 

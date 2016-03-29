@@ -123,6 +123,10 @@ public:
 														AllTopics* all_topics,
 														bool inf=false);
 
+	static double ComputePerplexity(Document* document,
+																AllTopics* all_topics,
+																double alpha);
+
 };
 
 }  // namespace atm

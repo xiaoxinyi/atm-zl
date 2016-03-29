@@ -120,12 +120,12 @@ class GibbsSampler {
   static void InferATM(
           const string& filename_corpus,
           const string& filename_authors,
+          const string& filename_topics,
           const string& filename_settings,
           long rng_seed);
 
   static void SaveState(
           GibbsState* gibbs_state,
-          const string& filename_topics,
           const string& filename_other);
 
   static void LoadState(

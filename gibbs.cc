@@ -1,4 +1,6 @@
 #include <assert.h>
+#include <stdio.h>
+
 #include <fstream>
 #include <iostream>
 #include <sstream>
@@ -13,6 +15,8 @@
 #define DEFAULT_SAMPLE_ALPHA 0
 #define DEFAULT_SAMPLE_ETA 0
 #define BUF_SIZE 100
+
+const int MAX_ITER_INF = 1000;
 
 namespace atm {
 
@@ -248,9 +252,136 @@ void GibbsSampler::IterateGibbsState(GibbsState* gibbs_state) {
 void GibbsSampler::InferATM(
           const string& filename_corpus,
           const string& filename_authors,
-          const string& filename_settings,
-          long rng_seed) {
-  
+          const string& filename_topics,
+          const string& filename_other,
+          long random_seed) {
+  Utils::InitRandomNumberGen(random_seed);
+
+  GibbsState* gibbs_state = new GibbsState();
+
+  LoadState(gibbs_state, filename_topics, filename_other);
+
+  AllTopics* all_topics = gibbs_state->getMutableAllTopics();
+  int topic_no = all_topics->getTopics();
+  double alpha = gibbs_state->getAlpha();
+  bool inf = true;
+
+  Corpus* corpus = gibbs_state->getMutableCorpus();
+  CorpusUtils::ReadCorpus(filename_corpus, filename_authors, corpus, topic_no);
+
+  for (int i = 0; i < corpus->getDocuments(); i++) {
+    Document* document = corpus->getMutableDocument(i);
+    DocumentUtils::SampleAuthors(document, all_topics, inf);
+  }
+
+  AllAuthors& all_authors = AllAuthors::GetInstance();
+
+  for (int i = 0; i < all_authors.getAuthors(); i++) {
+    Author* author = all_authors.getMutableAuthor(i);
+
+
+    // Sample topics for this author, without permuting the words
+    // in the author and without removing words from topics.
+    AuthorUtils::SampleTopics(author,
+                                0,
+                                false,
+                                alpha,
+                                all_topics,
+                                inf);
+  }
+
+  char filename[1000];
+  sprintf(filename, "result/inf-likelihood-%d.dat", topic_no);
+  ofstream ofs(filename);
+  for (int i = 0; i < MAX_ITER_INF; i++) {
+    IterateGibbsState(gibbs_state);
+  }
+
+  // Compute the Gibbs score with the new parameter values.
+  double gibbs_score = gibbs_state->computeGibbsScore();
+
+  ofs << gibbs_score << endl;
+
+}
+
+void GibbsSampler::SaveState(
+          GibbsState* gibbs_state,
+          const string& filename_other) {
+  Corpus* corpus = gibbs_state->getMutableCorpus();
+  AllTopics* all_topics = gibbs_state->getMutableAllTopics();
+  int topic_no = all_topics->getTopics();
+  assert(topic_no > 0);
+  double eta = all_topics->getMutableTopic(0)->getEta();
+  int term_no = corpus->getWordNo();
+  double alpha = gibbs_state->getAlpha();
+
+  ofstream ofs(filename_other);
+  ofs << topic_no << endl;
+  ofs << term_no << endl;
+  ofs << eta << endl;
+  ofs << alpha << endl;
+  ofs.close();
+}
+
+void GibbsSampler::LoadState(
+          GibbsState* gibbs_state,
+          const string& filename_topics,
+          const string& filename_other) {
+  AllTopics* all_topics = gibbs_state->getMutableAllTopics();
+  ifstream ifs(filename_other);
+ 
+  char buf[BUF_SIZE];
+  int topic_no = 0;
+  int term_no = 0;
+  double eta = 0;
+  double alpha = 0.0;
+
+  while(ifs.getline(buf, BUF_SIZE)) {
+    istringstream iss(buf);
+    string str;
+    getline(iss, str, ' ');
+    string value;
+    getline(iss, value, ' ');
+
+    if (value.compare("topic_no") == 0) {
+      topic_no = atoi(value.c_str());
+    } else if (value.compare("term_no") == 0) {
+      term_no = atoi(value.c_str());
+    } else if (value.compare("eta") == 0) {
+      eta = atof(value.c_str());
+    } else if (value.compare("alpha") == 0) {
+      alpha = atof(value.c_str());
+    }
+  }
+  ifs.close();
+
+  gibbs_state->setAlpha(alpha);
+
+  assert(topic_no > 0);
+  assert(term_no > 0);
+
+  cout << "loading " << filename_other << " successfully." << endl;
+  cout << "topic_no : " << topic_no << endl;
+  cout << "term_no : " << term_no << endl;
+  cout << "eta : " << eta << endl;
+  cout << "alpha : " << alpha << endl;
+
+  ifs = ifstream(filename_topics);
+  for (int i = 0; i < topic_no; i++) {
+    all_topics->addTopic(term_no, eta);
+    Topic* topic = all_topics->getMutableTopic(i);
+
+    ifs.getline(buf, BUF_SIZE);
+    istringstream iss(buf);
+
+    for (int w = 0; w < term_no; w++) {
+      string str;
+      iss >> str;
+      topic->setWordCount(w, atoi(str.c_str()));
+    }
+  }
+
+  ifs.close();
 }
 
 }  // namespace atm

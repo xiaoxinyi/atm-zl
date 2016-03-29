@@ -61,9 +61,8 @@ private:
 	// Word counts.
 	// std::vector<int> word_counts_;
 
-	// Level counts.
+	// Topic counts.
 	vector<int> topic_counts_;
-
 
 	// Author score.
 	double score_;
@@ -106,6 +105,8 @@ public:
 	static void PermuteWords(Author* author);
 
 	static double AlphaScore(Author* author, double alpha);
+
+	static vector<double> TopicProportion(Author* author, double alpha);
 };
 
 

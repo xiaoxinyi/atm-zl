@@ -1,7 +1,11 @@
 #include <assert.h>
+#include <math.h>
+
 #include <gsl/gsl_permutation.h>
 #include <gsl/gsl_sf.h>
-#include <math.h>
+#include <functional>   
+#include <numeric>      // std::inner_product
+
 
 #include "document.h"
 #include "utils.h"
@@ -147,6 +151,32 @@ void DocumentUtils::SampleAuthors(Document* document,
 			WordUtils::UpdateAuthorFromWord(word_idx, 1, all_topics);	
 		}
 	}
+}
+
+double DocumentUtils::ComputePerplexity(
+													Document* document,
+													AllTopics* all_topics,
+													double alpha) {
+	AllWords& all_words = AllWords::GetInstance();
+	AllAuthors& all_authors = AllAuthors::GetInstance();
+	int word_no = document->getWords();
+
+	double perplexity = 0.0;
+
+	for (int i = 0; i < word_no; i++) {
+		int word_idx = document->getWord(i);
+		Word* word = all_words.getMutableWord(word_idx);
+
+		int author_id = word->getAuthorId();
+		Author* author = all_authors.getMutableAuthor(author_id);
+
+		vector<double> topic_pr = AuthorUtils::TopicProportion(author, alpha);
+		vector<double> word_pr = AllTopicsUtils::WordProbabilities(all_topics, word->getId());
+
+		perplexity = inner_product(begin(topic_pr), end(topic_pr), begin(word_pr), 
+															 perplexity, plus<double>(), Utils::LogSum);
+	}
+	return exp(-perplexity / word_no);
 }
 
 }  // namespace atm

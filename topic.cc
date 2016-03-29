@@ -139,6 +139,8 @@ void LoadTopics(AllTopics* all_topics,
   cout << "eta : " << eta << endl;
 
   ifs = ifstream(filename_topics);
+  int topic_word_no = 0;
+
   for (int i = 0; i < topic_no; i++) {
     all_topics->addTopic(term_no, eta);
     Topic* topic = all_topics->getMutableTopic(i);
@@ -149,12 +151,27 @@ void LoadTopics(AllTopics* all_topics,
     for (int w = 0; w < term_no; w++) {
       string str;
       iss >> str;
+      topic_word_no += atoi(str.c_str());
       topic->setWordCount(w, atoi(str.c_str()));
     }
+
+    topic->setTopicWordNo(topic_word_no);
   }
 
   ifs.close();
   
+}
+
+vector<double> AllTopicsUtils::WordProbabilities(AllTopics* all_topics, int word_id) {
+  int topic_no = all_topics->getTopics();
+  vector<double> log_pr(topic_no, 0.0);
+
+  for (int i = 0; i < topic_no; i++) {
+    Topic* topic = all_topics->getMutableTopic(i);
+    log_pr[i] = topic->getLogPrWord(word_id);
+  }
+
+  return log_pr;
 }
 
 

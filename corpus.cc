@@ -6,6 +6,7 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <set>
 
 #include "corpus.h"
 #include "author.h"
@@ -120,7 +121,44 @@ void CorpusUtils::ReadCorpus(
        << all_words.getWordNo() << endl;
 }
 
+void CorpusUtils::SaveTrainCorpus(const string& filename_corpus,
+                              const string& filename_authors,
+                              const string& filename_save,
+                              const string& filename_authors_save,
+                              Corpus* corpus,
+                              int doc_no) {
+  ifstream infile(filename_corpus.c_str());
+  char buf[BUF_SIZE];
 
+  ifstream authors_infile(filename_authors.c_str());
+  char authors_buf[BUF_SIZE];
+
+  ofstream ofs_corpus(filename_save);
+  ofstream ofs_authors(filename_authors_save);
+
+  set<int> s;
+  for (int i = 0; i < doc_no; i++) {
+    s.insert(corpus->getMutableDocument(i)->getId());
+  }
+
+  int cur_doc_no = 0;
+
+  while (infile.getline(buf, BUF_SIZE) && 
+         authors_infile.getline(authors_buf, BUF_SIZE)) {
+    auto it = s.find(cur_doc_no);
+    if (*it == cur_doc_no) {
+      ofs_corpus << buf << endl;
+      ofs_authors << authors_buf << endl;
+    }
+  }
+  
+  infile.close();
+  authors_infile.close();
+
+  ofs_corpus.close();
+  ofs_authors.close();
+
+}
 
 void CorpusUtils::PermuteDocuments(Corpus* corpus) {
   int size = corpus->getDocuments();

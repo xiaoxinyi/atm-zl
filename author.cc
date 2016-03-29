@@ -135,13 +135,14 @@ void AuthorUtils::SampleTopics(
       AllTopics* all_topics,
       bool inf) {
 
+	int author_word_count = author->getWords();
+	if (author_word_count == 0) return;
 
 	// Permute the words in the author.
 	if (permute_words == 1) {
 		PermuteWords(author);
 	}
-
-	int author_word_count = author->getWords();
+	
 	for (int i = 0; i < author_word_count; i++) {
 		int word_idx = author->getWord(i);
 		SampleTopic(author, word_idx, remove, alpha, all_topics, inf);
@@ -178,7 +179,7 @@ vector<double> AuthorUtils::TopicProportion(Author* author,
 		log_pr[i] = log(author->getTopicCounts(i) + alpha) - 
 								log(sum_topic_count + topic_no * alpha);
 	}
-	
+
 	return log_pr;
 }
 

@@ -102,6 +102,9 @@ class GibbsSampler {
   static void InitGibbsState(
       GibbsState* gibbs_state);
 
+  static void InitGibbsStatePart(GibbsState* gibbs_state,
+                                 int doc_no);
+
   // Initialize Gibbs state - repeat the initialization REP_NO,
   // by calling InitGibbsState.
   // Keep the Gibbs state with the best score.
@@ -126,12 +129,25 @@ class GibbsSampler {
 
   static void SaveState(
           GibbsState* gibbs_state,
-          const string& filename_other);
+          const string& filename_other,
+          const string& filename_topics,
+          const string& filename_topics_count);
 
   static void LoadState(
           GibbsState* gibbs_state,
           const string& filename_topics,
           const string& filename_other);
+
+  static void IterateGibbsStatePart(GibbsState* gibbs_state,
+                                    int rand_doc_no);
+
+  static void TrainByPart(const string& filename_corpus,
+                          const string& filename_authors,
+                          const string& filename_settings,
+                          long random_seed,
+                          int rand_doc_no);
+
+
 };
 
 }  // namespace atm

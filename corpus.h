@@ -59,6 +59,13 @@ class CorpusUtils {
       Corpus* corpus,
       int topic_no);
 
+  static void SaveTrainCorpus(const string& filename_corpus,
+                              const string& filename_authors,
+                              const string& filename_save,
+                              const string& filename_authors_save,
+                              Corpus* corpus,
+                              int doc_no);
+
 
   // Permute the documents in the corpus.
   static void PermuteDocuments(Corpus* corpus);

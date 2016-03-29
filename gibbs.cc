@@ -17,6 +17,7 @@
 #define BUF_SIZE 100
 
 const int MAX_ITER_INF = 1000;
+const int MAX_ITER_TRAIN = 10000;
 
 namespace atm {
 
@@ -152,6 +153,41 @@ void GibbsSampler::InitGibbsState(
   cout << "Gibbs score = " << gibbs_score << endl;
 }
 
+
+void GibbsSampler::InitGibbsStatePart(
+    GibbsState* gibbs_state, int doc_no) {
+
+  Corpus* corpus = gibbs_state->getMutableCorpus();
+  AllTopics* all_topics = gibbs_state->getMutableAllTopics();
+  double alpha = gibbs_state->getAlpha();
+
+  assert(doc_no <= corpus->getDocuments());
+
+  for (int i = 0; i < doc_no; i++) {
+    Document* document = corpus->getMutableDocument(i);
+    DocumentUtils::SampleAuthors(document, all_topics);
+  }
+
+  AllAuthors& all_authors = AllAuthors::GetInstance();
+
+  for (int i = 0; i < all_authors.getAuthors(); i++) {
+    Author* author = all_authors.getMutableAuthor(i);
+
+    // Sample topics for this author, without permuting the words
+    // in the author and without removing words from topics.
+    AuthorUtils::SampleTopics(author,
+                                0,
+                                false,
+                                alpha,
+                                all_topics);
+  }
+
+  // Compute the Gibbs score.
+  double gibbs_score = gibbs_state->computeGibbsScore();
+
+  cout << "Gibbs score = " << gibbs_score << endl;
+}
+
 GibbsState* GibbsSampler::InitGibbsStateRep(
     const string& filename_corpus,
     const string& filename_authors,
@@ -185,6 +221,97 @@ GibbsState* GibbsSampler::InitGibbsStateRep(
   }
 
   return best_gibbs_state;
+}
+
+void GibbsSampler::IterateGibbsStatePart(GibbsState* gibbs_state,
+                                           int rand_doc_no) {
+   assert(gibbs_state != nullptr);
+
+  
+  Corpus* corpus = gibbs_state->getMutableCorpus();
+  AllTopics* all_topics = gibbs_state->getMutableAllTopics();
+  double alpha = gibbs_state->getAlpha();
+
+  gibbs_state->incIteration(1);
+  int current_iteration = gibbs_state->getIteration();
+
+  cout << "Start iteration..." << gibbs_state->getIteration() << endl;
+
+  // Determine value for permute.
+  int permute = 0;
+  int shuffle_lag = gibbs_state->getShuffleLag();
+  if (shuffle_lag > 0) {
+    permute = 1 - (current_iteration % shuffle_lag);
+  }
+
+
+  for (int i = 0; i < rand_doc_no; i++) {
+    Document* document = corpus->getMutableDocument(i);
+    DocumentUtils::SampleAuthors(document, all_topics);
+  }
+
+  AllAuthors& all_authors = AllAuthors::GetInstance();
+
+  for (int i = 0; i < all_authors.getAuthors(); i++) {
+    Author* author = all_authors.getMutableAuthor(i);
+    AuthorUtils::SampleTopics(author,
+                              permute,
+                              true,
+                              alpha,
+                              all_topics);
+  }
+
+  // Compute the Gibbs score with the new parameter values.
+  double gibbs_score = gibbs_state->computeGibbsScore();
+
+  cout << "Gibbs score at iteration "
+       << gibbs_state->getIteration() << " = " << gibbs_score << endl;
+}
+
+
+void GibbsSampler::TrainByPart(const string& filename_corpus,
+                               const string& filename_authors,
+                               const string& filename_settings,
+                               long random_seed,
+                               int rand_doc_no) {
+   // Initialize the random number generator.
+    Utils::InitRandomNumberGen(random_seed);
+
+    GibbsState* gibbs_state = new GibbsState();
+    ReadGibbsInput(gibbs_state, filename_corpus, filename_authors, filename_settings);
+    Corpus* corpus = gibbs_state->getMutableCorpus();
+
+    CorpusUtils::PermuteDocuments(corpus);
+
+    InitGibbsStatePart(gibbs_state, rand_doc_no);
+
+    char filename[1000];
+    sprintf(filename, "result/train-likelihood.dat");
+    ofstream ofs(filename);
+
+    for (int i = 0; i < MAX_ITER_TRAIN; i++) {
+      IterateGibbsStatePart(gibbs_state, rand_doc_no);
+      ofs << gibbs_state->getScore() << endl;
+    }
+    ofs.close();
+
+    string filename_other = "result/train.other";
+    string filename_topics = "result/train-topics.dat";
+    string filename_topics_count = "result/train-topics-counts.dat";
+    SaveState(gibbs_state, filename_other, filename_topics, filename_topics_count);
+
+    string filename_corpus_save = "result/train-corpus.txt";
+    string filename_authors_save = "result/train-authors.txt";
+
+    CorpusUtils::SaveTrainCorpus(filename_corpus,
+                                 filename_authors,
+                                 filename_corpus_save,
+                                 filename_authors_save,
+                                 corpus,
+                                 rand_doc_no);
+
+    delete gibbs_state;
+
 }
 
 void GibbsSampler::IterateGibbsState(GibbsState* gibbs_state) {
@@ -306,7 +433,9 @@ void GibbsSampler::InferATM(
 
 void GibbsSampler::SaveState(
           GibbsState* gibbs_state,
-          const string& filename_other) {
+          const string& filename_other,
+          const string& filename_topics,
+          const string& filename_topics_count) {
   Corpus* corpus = gibbs_state->getMutableCorpus();
   AllTopics* all_topics = gibbs_state->getMutableAllTopics();
   int topic_no = all_topics->getTopics();
@@ -321,6 +450,10 @@ void GibbsSampler::SaveState(
   ofs << eta << endl;
   ofs << alpha << endl;
   ofs.close();
+
+  AllTopicsUtils::SaveTopics(all_topics, 
+                            filename_topics,
+                            filename_topics_count);
 }
 
 void GibbsSampler::LoadState(

@@ -89,6 +89,8 @@ public:
 	Document(Document&& from) = default;
 	Document& operator=(Document&& from) = default;
 
+	int getId() const { return id_; }
+	
 	int getWords() const { return words_.size(); }
 	int getAuthors() const { return author_ids_.size(); }
 

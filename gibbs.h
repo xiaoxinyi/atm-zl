@@ -125,6 +125,7 @@ class GibbsSampler {
           const string& filename_authors,
           const string& filename_topics,
           const string& filename_settings,
+          const string& filename_author_counts,
           long rng_seed);
 
   static void SaveState(

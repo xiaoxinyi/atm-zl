@@ -320,6 +320,12 @@ void GibbsSampler::TrainByPart(const string& filename_corpus,
                                  corpus,
                                  rand_doc_no);
 
+    string filename_author_counts_save = "result/train-author-counts-final.dat";
+
+    AllAuthorsUtils::SaveAuthors(filename_author_counts_save);
+
+
+
     delete gibbs_state;
 
 }
@@ -386,6 +392,7 @@ void GibbsSampler::InferATM(
           const string& filename_authors,
           const string& filename_topics,
           const string& filename_other,
+          const string& filename_author_counts,
           long random_seed) {
   Utils::InitRandomNumberGen(random_seed);
 
@@ -400,6 +407,8 @@ void GibbsSampler::InferATM(
 
   Corpus* corpus = gibbs_state->getMutableCorpus();
   CorpusUtils::ReadCorpus(filename_corpus, filename_authors, corpus, topic_no);
+
+  AllAuthorsUtils::LoadAuthors(filename_author_counts);
 
   for (int i = 0; i < corpus->getDocuments(); i++) {
     Document* document = corpus->getMutableDocument(i);
@@ -435,7 +444,6 @@ void GibbsSampler::InferATM(
   ofs.close();
 
   delete gibbs_state;
-
 }
 
 void GibbsSampler::SaveState(

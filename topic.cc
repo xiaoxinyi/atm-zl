@@ -104,7 +104,7 @@ void AllTopicsUtils::SaveTopics(AllTopics* all_topics,
   ofs_count.close();
 }
 
-void LoadTopics(AllTopics* all_topics,
+void AllTopicsUtils::LoadTopics(AllTopics* all_topics,
                 const string& filename_topics,
                 const string& filename_other) {
   ifstream ifs(filename_other);

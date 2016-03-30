@@ -188,12 +188,14 @@ double CorpusUtils::ComputePerplexity(Corpus* corpus,
                                       double alpha) {
   int doc_no = corpus->getDocuments();
   double perplexity = 0.0;
+  int total_words = 0;
   for (int i = 0; i < doc_no; i++) {
     Document* document = corpus->getMutableDocument(i);
     perplexity +=  DocumentUtils::ComputePerplexity(document, all_topics, alpha);
+    total_words += document->getWords();
   }
 
-  return perplexity;
+  return exp(-perplexity / total_words);
 }
 
 }  // namespace atm

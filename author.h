@@ -31,6 +31,7 @@ public:
 	int getId() const { return id_; }
 
 	int getTopicCounts(int topic_id) const { return topic_counts_.at(topic_id); }
+	void setTopicCounts(int topic_id, int count) { topic_counts_[topic_id] = count; }
 	int getSumTopicCounts(int topic_no) const;
 	void updateTopicCounts(int topic_id, int value) {
 		topic_counts_.at(topic_id) += value;
@@ -107,6 +108,8 @@ public:
 	static double AlphaScore(Author* author, double alpha);
 
 	static vector<double> TopicProportion(Author* author, double alpha);
+
+	static void SaveAuthor(Author* author, ofstream& ofs);
 };
 
 
@@ -140,6 +143,10 @@ private:
 class AllAuthorsUtils {
 public:
 	static double AlphaScores(double alpha);
+
+	static void SaveAuthors(const string& filename_authors);
+
+	static void LoadAuthors(const string& filename_authors);
 };
 
 }  // namespace atm

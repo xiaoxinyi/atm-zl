@@ -161,7 +161,7 @@ double DocumentUtils::ComputePerplexity(
 	AllWords& all_words = AllWords::GetInstance();
 	AllAuthors& all_authors = AllAuthors::GetInstance();
 	int word_no = document->getWords();
-	
+
 	double perplexity = 0.0;
 
 	for (int i = 0; i < word_no; i++) {
@@ -178,7 +178,8 @@ double DocumentUtils::ComputePerplexity(
 															 perplexity, plus<double>(), Utils::LogSum);
 
 	}
-	return exp(-perplexity / word_no);
+
+	return perplexity;
 }
 
 }  // namespace atm

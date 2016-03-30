@@ -2,10 +2,15 @@
 #include <math.h>
 #include <algorithm>
 #include <gsl/gsl_sf.h>
+#include <fstream>
+#include <iostream>
+#include <sstream>
 
 #include "utils.h"
 #include "author.h"
 #include "topic.h"
+
+const int BUF_SIZE = 1000;
 
 namespace atm {
 
@@ -184,6 +189,15 @@ vector<double> AuthorUtils::TopicProportion(Author* author,
 	return log_pr;
 }
 
+void AuthorUtils::SaveAuthor(Author* author, ofstream& ofs) {
+	int topic_no = author->getTopicNo();
+	for (int i = 0; i < topic_no; i++) {
+		int topic_count = author->getTopicCounts(i);
+		ofs << topic_count << " ";
+	}
+	ofs << endl;
+}
+
 // =======================================================================
 // AllAuthorsUtils
 // =======================================================================
@@ -197,6 +211,39 @@ double AllAuthorsUtils::AlphaScores(double alpha) {
 		score += AuthorUtils::AlphaScore(author, alpha);
 	}	
 	return score;
+}
+
+void AllAuthorsUtils::SaveAuthors(const string& filename_authors) {
+	AllAuthors& all_authors = AllAuthors::GetInstance();
+	int author_no = all_authors.getAuthors();
+	ofstream ofs(filename_authors);
+
+	for (int i = 0; i < author_no; i++) {
+		Author* author = all_authors.getMutableAuthor(i);
+		AuthorUtils::SaveAuthor(author, ofs);
+	}
+	ofs.close();
+}
+
+void AllAuthorsUtils::LoadAuthors(const string& filename_authors) {
+	ifstream ifs(filename_authors);
+	AllAuthors& all_authors = AllAuthors::GetInstance();
+	int topic_no = all_authors.getMutableAuthor(0)->getTopicNo();
+	int authors = all_authors.getAuthors();
+
+	char buf[BUF_SIZE];
+	for (int i = 0; i < authors; i++) {
+		ifs.getline(buf, BUF_SIZE);
+		istringstream iss(buf);
+
+		Author* author = all_authors.getMutableAuthor(i);
+		for (int j = 0; j < topic_no; j++) {
+			string str;
+			getline(iss, str, ' ');
+			author->setTopicCounts(j, atoi(str.c_str()));
+		}	
+	}
+	ifs.close();	
 }
 
 }  // namespace atm

@@ -6,6 +6,7 @@
 #include <map>
 #include <vector>
 #include <gsl/gsl_sf.h>
+#include <iostream>
 
 using namespace std;
 
@@ -22,8 +23,8 @@ class Topic {
 public:
 	Topic(int corpus_word_no, double eta);
 	
-  double getLogPrWord(int word_id) const { 
-  	return log(eta_ + word_counts_[word_id]) - 
+  double getLogPrWord(int word_id) const {
+  	return log(eta_ + word_counts_[word_id]) -
   				 log(eta_ * corpus_word_no_ + topic_word_no_); }
 
   int getWordCount(int word_id) const { return word_counts_[word_id]; }

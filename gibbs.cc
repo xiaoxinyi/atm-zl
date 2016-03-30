@@ -14,10 +14,10 @@
 #define DEFAULT_SHUFFLE_LAG 100
 #define DEFAULT_SAMPLE_ALPHA 0
 #define DEFAULT_SAMPLE_ETA 0
-#define BUF_SIZE 100
+#define BUF_SIZE 30000
 
 const int MAX_ITER_INF = 1000;
-const int MAX_ITER_TRAIN = 10000;
+const int MAX_ITER_TRAIN = 2000;
 
 namespace atm {
 
@@ -45,9 +45,9 @@ double GibbsState::computeGibbsScore() {
   eta_score_ = AllTopicsUtils::EtaScores(&all_topics_);
 
   score_ = alpha_score_ + eta_score_;
-  cout << "Alpha_score: " << alpha_score_ << endl;
-  cout << "Eta_score: " << eta_score_ << endl;
-  cout << "Score: " << score_ << endl;
+  // cout << "Alpha_score: " << alpha_score_ << endl;
+  // cout << "Eta_score: " << eta_score_ << endl;
+  // cout << "Score: " << score_ << endl;
 
   // Update the maximum score if necessary.
   if (score_ > max_score_ || iteration_ == 0) {
@@ -287,17 +287,27 @@ void GibbsSampler::TrainByPart(const string& filename_corpus,
 
     char filename[1000];
     sprintf(filename, "result/train-likelihood.dat");
+    char filename_other[100];
+    char filename_topics[100];
+    char filename_topics_count[100];
+    
     ofstream ofs(filename);
 
     for (int i = 0; i < MAX_ITER_TRAIN; i++) {
       IterateGibbsStatePart(gibbs_state, rand_doc_no);
       ofs << gibbs_state->getScore() << endl;
+      sprintf(filename_other, "result/train.other");
+      sprintf(filename_topics, "result/train-topics-%3d.dat", i);
+      sprintf(filename_topics_count, "result/train-topics-counts-%3d.dat", i);
+      if (i % 100 == 0) {
+        SaveState(gibbs_state, filename_other, filename_topics, filename_topics_count);
+      }
     }
     ofs.close();
 
-    string filename_other = "result/train.other";
-    string filename_topics = "result/train-topics.dat";
-    string filename_topics_count = "result/train-topics-counts.dat";
+    sprintf(filename_other, "result/train.other");
+    sprintf(filename_topics, "result/train-topics-final.dat");
+    sprintf(filename_topics_count, "result/train-topics-counts-final.dat");
     SaveState(gibbs_state, filename_other, filename_topics, filename_topics_count);
 
     string filename_corpus_save = "result/train-corpus.txt";
@@ -314,7 +324,7 @@ void GibbsSampler::TrainByPart(const string& filename_corpus,
 
 }
 
-void GibbsSampler::IterateGibbsState(GibbsState* gibbs_state) {
+void GibbsSampler::IterateGibbsState(GibbsState* gibbs_state, bool inf) {
   assert(gibbs_state != nullptr);
 
   
@@ -336,14 +346,9 @@ void GibbsSampler::IterateGibbsState(GibbsState* gibbs_state) {
     permute = 1 - (current_iteration % shuffle_lag);
   }
 
-  // Permute documents in corpus.
-  if (permute == 1) {
-    CorpusUtils::PermuteDocuments(corpus);
-  }
-
   for (int i = 0; i < corpus->getDocuments(); i++) {
     Document* document = corpus->getMutableDocument(i);
-    DocumentUtils::SampleAuthors(document, all_topics);
+    DocumentUtils::SampleAuthors(document, all_topics, inf);
   }
 
   AllAuthors& all_authors = AllAuthors::GetInstance();
@@ -354,7 +359,7 @@ void GibbsSampler::IterateGibbsState(GibbsState* gibbs_state) {
                               permute,
                               true,
                               alpha,
-                              all_topics);
+                              all_topics, inf);
   }
 
   // Sample hyper-parameters.
@@ -418,16 +423,18 @@ void GibbsSampler::InferATM(
   }
 
   char filename[1000];
-  sprintf(filename, "result/inf-likelihood-%d.dat", topic_no);
+  sprintf(filename, "result/inf-perplexity-%d.dat", topic_no);
   ofstream ofs(filename);
+  ofs.precision(12);
   for (int i = 0; i < MAX_ITER_INF; i++) {
-    IterateGibbsState(gibbs_state);
+    IterateGibbsState(gibbs_state, inf);
+    double perplexity = CorpusUtils::ComputePerplexity(corpus, all_topics, alpha);
+    ofs << perplexity << endl;
   }
 
-  // Compute the Gibbs score with the new parameter values.
-  double gibbs_score = gibbs_state->computeGibbsScore();
+  ofs.close();
 
-  ofs << gibbs_score << endl;
+  delete gibbs_state;
 
 }
 
@@ -445,10 +452,10 @@ void GibbsSampler::SaveState(
   double alpha = gibbs_state->getAlpha();
 
   ofstream ofs(filename_other);
-  ofs << topic_no << endl;
-  ofs << term_no << endl;
-  ofs << eta << endl;
-  ofs << alpha << endl;
+  ofs << "topic_no " << topic_no << endl;
+  ofs << "term_no " << term_no << endl;
+  ofs << "eta " << eta << endl;
+  ofs << "alpha " << alpha << endl;
   ofs.close();
 
   AllTopicsUtils::SaveTopics(all_topics, 
@@ -476,13 +483,13 @@ void GibbsSampler::LoadState(
     string value;
     getline(iss, value, ' ');
 
-    if (value.compare("topic_no") == 0) {
+    if (str.compare("topic_no") == 0) {
       topic_no = atoi(value.c_str());
-    } else if (value.compare("term_no") == 0) {
+    } else if (str.compare("term_no") == 0) {
       term_no = atoi(value.c_str());
-    } else if (value.compare("eta") == 0) {
+    } else if (str.compare("eta") == 0) {
       eta = atof(value.c_str());
-    } else if (value.compare("alpha") == 0) {
+    } else if (str.compare("alpha") == 0) {
       alpha = atof(value.c_str());
     }
   }
@@ -506,13 +513,25 @@ void GibbsSampler::LoadState(
 
     ifs.getline(buf, BUF_SIZE);
     istringstream iss(buf);
+		
+		int topic_word_no = 0;
 
     for (int w = 0; w < term_no; w++) {
       string str;
-      iss >> str;
-      topic->setWordCount(w, atoi(str.c_str()));
+      getline(iss, str, ' ');
+			int word_count = atoi(str.c_str());
+			assert(word_count >= 0);
+      topic->setWordCount(w, word_count);
+			topic_word_no += word_count;
     }
+		
+		topic->setTopicWordNo(topic_word_no);
   }
+	
+	for (int i = 0; i < topic_no; i++) {
+		Topic* topic = all_topics->getMutableTopic(i);
+		cout << topic->getTopicWordNo() << endl;
+	}
 
   ifs.close();
 }

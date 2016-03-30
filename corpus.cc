@@ -10,6 +10,7 @@
 
 #include "corpus.h"
 #include "author.h"
+#include "document.h"
 
 #define BUF_SIZE 10000
 
@@ -145,13 +146,13 @@ void CorpusUtils::SaveTrainCorpus(const string& filename_corpus,
 
   while (infile.getline(buf, BUF_SIZE) && 
          authors_infile.getline(authors_buf, BUF_SIZE)) {
-    auto it = s.find(cur_doc_no);
-    if (*it == cur_doc_no) {
+    auto it = s.find(cur_doc_no++);
+    if (it != end(s)) {
       ofs_corpus << buf << endl;
       ofs_authors << authors_buf << endl;
     }
   }
-  
+
   infile.close();
   authors_infile.close();
 
@@ -180,6 +181,19 @@ void CorpusUtils::PermuteDocuments(Corpus* corpus) {
   corpus->setDocuments(move(permuted_documents));
 
   gsl_permutation_free(perm);
+}
+
+double CorpusUtils::ComputePerplexity(Corpus* corpus, 
+                                      AllTopics* all_topics,
+                                      double alpha) {
+  int doc_no = corpus->getDocuments();
+  double perplexity = 0.0;
+  for (int i = 0; i < doc_no; i++) {
+    Document* document = corpus->getMutableDocument(i);
+    perplexity +=  DocumentUtils::ComputePerplexity(document, all_topics, alpha);
+  }
+
+  return perplexity;
 }
 
 }  // namespace atm

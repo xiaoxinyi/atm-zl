@@ -3,6 +3,7 @@
 
 #include <gsl/gsl_permutation.h>
 #include <gsl/gsl_sf.h>
+#include <iostream>
 #include <functional>   
 #include <numeric>      // std::inner_product
 
@@ -146,9 +147,9 @@ void DocumentUtils::SampleAuthors(Document* document,
 		// Sample author id uniformly.
 		int author_id = Utils::SampleFromLogPr(log_pr);
 		if (author_id != word->getAuthorId()) {
-			WordUtils::UpdateAuthorFromWord(word_idx, -1, all_topics);
+			WordUtils::UpdateAuthorFromWord(word_idx, -1, all_topics, inf);
 			word->setAuthorId(author_id);
-			WordUtils::UpdateAuthorFromWord(word_idx, 1, all_topics);	
+			WordUtils::UpdateAuthorFromWord(word_idx, 1, all_topics, inf);
 		}
 	}
 }
@@ -160,7 +161,7 @@ double DocumentUtils::ComputePerplexity(
 	AllWords& all_words = AllWords::GetInstance();
 	AllAuthors& all_authors = AllAuthors::GetInstance();
 	int word_no = document->getWords();
-
+	
 	double perplexity = 0.0;
 
 	for (int i = 0; i < word_no; i++) {
@@ -175,6 +176,7 @@ double DocumentUtils::ComputePerplexity(
 
 		perplexity = inner_product(begin(topic_pr), end(topic_pr), begin(word_pr), 
 															 perplexity, plus<double>(), Utils::LogSum);
+
 	}
 	return exp(-perplexity / word_no);
 }

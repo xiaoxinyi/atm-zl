@@ -6,7 +6,6 @@ using atm::GibbsSampler;
 using atm::GibbsState;
 using atm::AllTopicsUtils;
 
-static const string FILENAME_TOPICS = "topics_final.dat";
 
 #define MAX_ITERATIONS 10000
 
@@ -29,7 +28,7 @@ int main(int argc, char** argv) {
         "(1) corpus filename "
         "(2) author filename "
         "(3) settings filename " 
-        "(4) train doc number" << endl;
+        "(4) part of train doc number" << endl;
   }
   return 0;
 }

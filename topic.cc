@@ -46,6 +46,7 @@ void TopicUtils::SaveTopic(
     ofs_count << topic->getWordCount(i) << " ";
   }
   ofs << endl;
+  ofs_count << endl;
 }
 
 double TopicUtils::EtaScore(Topic* topic) {
@@ -120,11 +121,11 @@ void LoadTopics(AllTopics* all_topics,
     string value;
     getline(iss, value, ' ');
 
-    if (value.compare("topic_no") == 0) {
+    if (str.compare("topic_no") == 0) {
       topic_no = atoi(value.c_str());
-    } else if (value.compare("term_no") == 0) {
+    } else if (str.compare("term_no") == 0) {
       term_no = atoi(value.c_str());
-    } else if (value.compare("eta") == 0) {
+    } else if (str.compare("eta") == 0) {
       eta = atof(value.c_str());
     }
   }

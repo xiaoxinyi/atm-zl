@@ -118,7 +118,7 @@ class GibbsSampler {
   // Iterations of the Gibbs state.
   // Sample the document path and the word levels in the tree.
   // Sample hyperparameters: Eta, GEM mean and scale.
-  static void IterateGibbsState(GibbsState* gibbs_state);
+  static void IterateGibbsState(GibbsState* gibbs_state, bool inf=false);
 
   static void InferATM(
           const string& filename_corpus,

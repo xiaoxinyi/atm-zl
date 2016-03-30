@@ -137,6 +137,7 @@ void AuthorUtils::SampleTopics(
 
 	int author_word_count = author->getWords();
 	if (author_word_count == 0) return;
+	assert(author_word_count > 0);
 
 	// Permute the words in the author.
 	if (permute_words == 1) {

@@ -69,6 +69,10 @@ class CorpusUtils {
 
   // Permute the documents in the corpus.
   static void PermuteDocuments(Corpus* corpus);
+
+  static double ComputePerplexity(Corpus* corpus, 
+                                  AllTopics* all_topics,
+                                  double alpha);
 };
 
 } // atm
